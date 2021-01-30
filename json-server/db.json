@@ -1,0 +1,16 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "Jogging",
+      "dateStart": "2021-01-30T17:11:28.888Z",
+      "endDate": "2021-01-30T18:11:28.888Z"
+    },
+    {
+      "title": "Learning TypeScript",
+      "dateStart": "2021-01-30T190:11:28.888Z",
+      "dateEnd": "2021-01-30T20:00:28.888Z",
+      "id": 2
+    }
+  ]
+}
