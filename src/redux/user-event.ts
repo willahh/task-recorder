@@ -2,7 +2,7 @@ import { Action, AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 import { RootState } from "./store";
 
-interface UserEvent {
+export interface UserEvent {
   id: number;
   title: string;
   dateStart: string;
@@ -30,6 +30,13 @@ const LOAD_FAILURE = 'userEvents/load_failure';
 interface LoadFailureAction extends Action<typeof LOAD_FAILURE> {
   error: string;
 }
+
+const selectUserEventsState = (rootState: RootState) => rootState.userEvents;
+
+export const selectUserEventsArray = (rootState: RootState) => {
+  const state = selectUserEventsState(rootState);
+  return state.allIds.map(id => state.byIds[id]);
+};
 
 const initialState: UserEventsState = {
   byIds: {},
