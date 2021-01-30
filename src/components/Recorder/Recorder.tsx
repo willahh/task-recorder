@@ -19,11 +19,10 @@ const Recorder = () => {
       dispatch(stop());
     } else {
       dispatch(start());
-    interval.current = window.setInterval(() => {
-      setCount((count) => count + 1);
-    }, 1000);
+      interval.current = window.setInterval(() => {
+        setCount((count) => count + 1);
+      }, 1000);
     }
-    
   };
 
   React.useEffect(() => {
