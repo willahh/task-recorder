@@ -1,6 +1,6 @@
-import { Action, AnyAction } from "redux";
-import { ThunkAction } from "redux-thunk";
-import { RootState } from "./store";
+import { Action, AnyAction } from 'redux';
+import { ThunkAction } from 'redux-thunk';
+import { RootState } from './store';
 import { selectDateStart } from './recorder';
 
 export interface UserEvent {
@@ -24,7 +24,7 @@ const LOAD_SUCCESS = 'userEvents/load_success';
 interface LoadSuccessAction extends Action<typeof LOAD_SUCCESS> {
   payload: {
     events: UserEvent[];
-  }
+  };
 }
 
 const LOAD_FAILURE = 'userEvents/load_failure';
@@ -41,7 +41,7 @@ const CREATE_SUCCESS = 'userEvents/create_success';
 interface CreateSuccessAction extends Action<typeof CREATE_SUCCESS> {
   payload: {
     event: UserEvent;
-  }
+  };
 }
 
 const CREATE_FAILURE = 'userEvents/create_failure';
@@ -55,7 +55,7 @@ export const createUserEvent = (): ThunkAction<
   CreateRequestAction | CreateSuccessAction | CreatefailureAction
 > => async (dispatch, getState) => {
   dispatch({
-    type: CREATE_REQUEST
+    type: CREATE_REQUEST,
   });
 
   try {
@@ -63,15 +63,15 @@ export const createUserEvent = (): ThunkAction<
     const event: Omit<UserEvent, 'id'> = {
       title: 'No name',
       dateStart,
-      dateEnd: new Date().toISOString()
+      dateEnd: new Date().toISOString(),
     };
 
     const response = await fetch(`http://localhost:3001/events`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(event)
+      body: JSON.stringify(event),
     });
 
     const createdEvent: UserEvent = await response.json();
@@ -79,33 +79,75 @@ export const createUserEvent = (): ThunkAction<
     dispatch({
       type: CREATE_SUCCESS,
       payload: {
-        event: createdEvent
-      }
+        event: createdEvent,
+      },
     });
   } catch (e) {
     dispatch({
-      type: CREATE_FAILURE
-    })
+      type: CREATE_FAILURE,
+    });
   }
+};
+
+const DELETE_REQUEST = 'userEvents/delete_request';
+interface DeleteRequestAction extends Action<typeof DELETE_REQUEST> { }
+
+const DELETE_SUCCESS = 'userEvents/delete_success';
+interface DeleteSuccessAction extends Action<typeof DELETE_SUCCESS> {
+  payload: { id: UserEvent['id'] }
 }
+
+const DELETE_FAILURE = 'userEvents/delete_failure';
+interface DeleteFailureAction extends Action<typeof DELETE_FAILURE> { }
+
+export const deleteUserEvent = (
+  id: UserEvent['id']
+): ThunkAction<
+  Promise<void>,
+  RootState,
+  undefined,
+  DeleteRequestAction | DeleteSuccessAction | DeleteFailureAction
+> => async dispatch => {
+  dispatch({
+    type: DELETE_REQUEST
+  });
+
+  try {
+    const response = await fetch(`http://localhost:3001/events/${id}`, {
+      method: 'DELETE'
+    });
+
+    if (response.ok) {
+      dispatch({
+        type: DELETE_SUCCESS,
+        payload: { id }
+      })
+    }
+  } catch (e) {
+    dispatch({ type: DELETE_FAILURE })
+  }
+};
 
 const selectUserEventsState = (rootState: RootState) => rootState.userEvents;
 
 export const selectUserEventsArray = (rootState: RootState) => {
   const state = selectUserEventsState(rootState);
-  return state.allIds.map(id => state.byIds[id]);
+  return state.allIds.map((id) => state.byIds[id]);
 };
 
 const initialState: UserEventsState = {
   byIds: {},
-  allIds: []
-}
+  allIds: [],
+};
 
 export const loadUserEvents = (): ThunkAction<
-  void, RootState, undefined, LoadRequestAction | LoadSuccessAction | LoadFailureAction
+  void,
+  RootState,
+  undefined,
+  LoadRequestAction | LoadSuccessAction | LoadFailureAction
 > => async (dispatch, getState) => {
   dispatch({
-    type: LOAD_REQUEST
+    type: LOAD_REQUEST,
   });
 
   try {
@@ -114,19 +156,19 @@ export const loadUserEvents = (): ThunkAction<
 
     dispatch({
       type: LOAD_SUCCESS,
-      payload: { events }
-    })
+      payload: { events },
+    });
   } catch (e) {
     dispatch({
       type: LOAD_FAILURE,
-      error: "Failed to load events."
-    })
+      error: 'Failed to load events.',
+    });
   }
 };
 
 const userEventsReducer = (
   state: UserEventsState = initialState,
-  action: LoadSuccessAction | CreateSuccessAction
+  action: LoadSuccessAction | CreateSuccessAction | DeleteSuccessAction
 ) => {
   switch (action.type) {
     case LOAD_SUCCESS:
@@ -137,18 +179,27 @@ const userEventsReducer = (
         byIds: events.reduce<UserEventsState['byIds']>((byIds, event) => {
           byIds[event.id] = event;
           return byIds;
-        }, {})
+        }, {}),
       };
     case CREATE_SUCCESS:
       const { event } = action.payload;
       return {
         ...state,
         allIds: [...state.allIds, event.id],
-        byIds: { ...state.byIds, [event.id]: event }
+        byIds: { ...state.byIds, [event.id]: event },
       };
+    case DELETE_SUCCESS:
+      const { id } = action.payload;
+      const newState = {
+        ...state,
+        byIds: { ...state.byIds },
+        allIds: state.allIds.filter(storedId => storedId !== id)
+      };
+      delete newState.byIds[id];
+      return newState;
     default:
       return state;
   }
-}
+};
 
 export default userEventsReducer;
